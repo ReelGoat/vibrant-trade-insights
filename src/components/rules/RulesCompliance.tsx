@@ -4,7 +4,8 @@ import { Check, X, Trash, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface Rule {
   id: string;
@@ -22,9 +23,21 @@ const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [newRuleName, setNewRuleName] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Update local rules when props change
+  React.useEffect(() => {
+    setRules(initialRules);
+  }, [initialRules]);
 
   const addRule = () => {
-    if (!newRuleName.trim()) return;
+    if (!newRuleName.trim()) {
+      toast({
+        title: "Rule name required",
+        description: "Please enter a name for your rule.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const newRule: Rule = {
       id: Date.now().toString(),
@@ -37,10 +50,23 @@ const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }
     setRules([...rules, newRule]);
     setNewRuleName('');
     setDialogOpen(false);
+    
+    toast({
+      title: "Rule added",
+      description: `"${newRuleName}" has been added to your trading rules.`
+    });
   };
 
   const deleteRule = (id: string) => {
+    const ruleToDelete = rules.find(rule => rule.id === id);
     setRules(rules.filter(rule => rule.id !== id));
+    
+    if (ruleToDelete) {
+      toast({
+        title: "Rule deleted",
+        description: `"${ruleToDelete.name}" has been removed from your trading rules.`
+      });
+    }
   };
 
   return (
@@ -67,7 +93,10 @@ const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }
                   onChange={(e) => setNewRuleName(e.target.value)}
                 />
               </div>
-              <Button onClick={addRule}>Add Rule</Button>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={addRule}>Add Rule</Button>
+              </DialogFooter>
             </div>
           </DialogContent>
         </Dialog>

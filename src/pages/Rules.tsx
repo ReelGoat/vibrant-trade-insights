@@ -4,6 +4,7 @@ import RulesCompliance from '@/components/rules/RulesCompliance';
 import Navigation from '@/components/layout/Navigation';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
 // Mock data for initial rules
 const initialRules = [
@@ -39,15 +40,19 @@ const initialRules = [
 
 const Rules = () => {
   const [rules, setRules] = useState(initialRules);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  const openConfirmDialog = () => {
+    setConfirmDialogOpen(true);
+  };
 
   const clearAll = () => {
-    if (confirm('Are you sure you want to clear all rules?')) {
-      setRules([]);
-      toast({
-        title: "Rules cleared",
-        description: "All trading rules have been removed."
-      });
-    }
+    setRules([]);
+    setConfirmDialogOpen(false);
+    toast({
+      title: "Rules cleared",
+      description: "All trading rules have been removed."
+    });
   };
 
   return (
@@ -58,7 +63,7 @@ const Rules = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={clearAll}
+            onClick={openConfirmDialog}
           >
             Clear All
           </Button>
@@ -77,6 +82,21 @@ const Rules = () => {
           </div>
         </div>
       </div>
+      
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Clear All Rules</DialogTitle>
+            <DialogDescription>
+              This will remove all your trading rules. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={clearAll}>Clear All</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Navigation />
     </div>
