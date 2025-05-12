@@ -1,26 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import AccountBalanceCard from '@/components/dashboard/AccountBalanceCard';
-import TradingCalendar from '@/components/dashboard/TradingCalendar';
-import KeyMetricsCard from '@/components/dashboard/KeyMetricsCard';
+import React from 'react';
+import Navigation from '@/components/layout/Navigation';
 import CircularChart from '@/components/dashboard/CircularCharts';
 import TradingHealthTrend from '@/components/dashboard/TradingHealthTrend';
 import PerformanceBars from '@/components/dashboard/PerformanceBars';
 import TopPerforming from '@/components/dashboard/TopPerforming';
 import TimeHeldAnalysis from '@/components/dashboard/TimeHeldAnalysis';
-import Navigation from '@/components/layout/Navigation';
-import { DollarSign, Percent, Activity, ArrowUp, ArrowDown } from 'lucide-react';
 
-// Mock data - in a real app this would come from an API or database
-const mockKeyMetrics = {
-  totalPL: { title: 'Total P&L', value: 12450, icon: DollarSign, prefix: '$', trend: { direction: 'up' as const, value: '+8.3% from last month' } },
-  winRate: { title: 'Win Rate', value: 67, icon: Percent, suffix: '%', trend: { direction: 'up' as const, value: '+5.2% from last month' } },
-  profitFactor: { title: 'Profit Factor', value: 2.4, icon: Activity, trend: { direction: 'up' as const, value: '+0.3 from last month' } },
-  averageWin: { title: 'Average Win', value: 550, icon: ArrowUp, prefix: '$', color: 'text-profit' },
-  averageLoss: { title: 'Average Loss', value: 230, icon: ArrowDown, prefix: '$', color: 'text-loss' },
-  maxDrawdown: { title: 'Max Drawdown', value: 3200, icon: ArrowDown, prefix: '$', color: 'text-loss' },
-};
-
+// Mock data (same as Index.tsx for consistency)
 const mockCircularData = {
   profits: { title: 'Total Profits', value: 15000, total: 20000, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
   winRate: { title: 'Win Rate', value: 67, total: 100, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
@@ -74,49 +61,11 @@ const mockTimeHeld = [
   { name: 'Week+', count: 12, winRate: 58, netProfit: -1250 },
 ];
 
-const Dashboard = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    // In a real app, you would fetch data for the selected date here
-    console.log('Selected date:', date);
-  };
-
+const DetailedDashboard = () => {
   return (
     <div className="min-h-screen bg-background text-foreground pb-16">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Trading Journal</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="md:col-span-1">
-            <AccountBalanceCard currentBalance={25000} initialDeposit={20000} />
-          </div>
-          <div className="md:col-span-2">
-            <TradingCalendar onDateSelect={handleDateSelect} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <KeyMetricsCard metric={mockKeyMetrics.totalPL} />
-          <KeyMetricsCard metric={mockKeyMetrics.winRate} />
-          <KeyMetricsCard metric={mockKeyMetrics.profitFactor} />
-          <KeyMetricsCard metric={mockKeyMetrics.averageWin} />
-          <KeyMetricsCard metric={mockKeyMetrics.averageLoss} />
-          <KeyMetricsCard metric={mockKeyMetrics.maxDrawdown} />
-        </div>
-
-        <h2 className="text-xl font-bold mb-4">Detailed Analytics</h2>
+        <h1 className="text-2xl font-bold mb-6">Detailed Analytics</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <CircularChart data={mockCircularData.profits} />
@@ -159,4 +108,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DetailedDashboard;
