@@ -39,7 +39,13 @@ const History = () => {
       
       if (error) throw error;
       
-      setTrades(data || []);
+      // Process the data to ensure proper typing
+      const typedTrades = (data || []).map(trade => ({
+        ...trade,
+        direction: trade.direction as 'long' | 'short'
+      }));
+      
+      setTrades(typedTrades as Trade[]);
     } catch (error: any) {
       console.error('Error fetching trade history:', error.message);
       toast({

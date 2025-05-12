@@ -69,16 +69,18 @@ const TradesList = () => {
       
       if (tradesError) throw tradesError;
       
-      // Map setup details to trades
+      // Map setup details to trades and properly cast the direction
       const tradesWithSetups = tradesData?.map(trade => {
         const setup = setupsData?.find(s => s.id === trade.setup_id) || null;
         return {
           ...trade,
+          // Ensure direction is typed correctly
+          direction: trade.direction as 'long' | 'short',
           setup: setup
         };
       }) || [];
       
-      setTrades(tradesWithSetups);
+      setTrades(tradesWithSetups as Trade[]);
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
       toast({
