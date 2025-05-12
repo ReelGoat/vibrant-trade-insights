@@ -9,7 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      trades: {
+        Row: {
+          created_at: string
+          direction: string
+          entry_date: string
+          entry_price: number
+          exit_date: string | null
+          exit_price: number | null
+          id: string
+          notes: string | null
+          profit_loss: number | null
+          quantity: number
+          rules_followed: string[] | null
+          rules_violated: string[] | null
+          screenshot_url: string | null
+          setup_id: string | null
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          entry_date?: string
+          entry_price: number
+          exit_date?: string | null
+          exit_price?: number | null
+          id?: string
+          notes?: string | null
+          profit_loss?: number | null
+          quantity: number
+          rules_followed?: string[] | null
+          rules_violated?: string[] | null
+          screenshot_url?: string | null
+          setup_id?: string | null
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          entry_date?: string
+          entry_price?: number
+          exit_date?: string | null
+          exit_price?: number | null
+          id?: string
+          notes?: string | null
+          profit_loss?: number | null
+          quantity?: number
+          rules_followed?: string[] | null
+          rules_violated?: string[] | null
+          screenshot_url?: string | null
+          setup_id?: string | null
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_setup_id_fkey"
+            columns: ["setup_id"]
+            isOneToOne: false
+            referencedRelation: "trading_setups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trading_setups: {
+        Row: {
+          created_at: string
+          criteria: string | null
+          description: string | null
+          entry_rules: string | null
+          exit_rules: string | null
+          id: string
+          name: string
+          risk_management: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criteria?: string | null
+          description?: string | null
+          entry_rules?: string | null
+          exit_rules?: string | null
+          id?: string
+          name: string
+          risk_management?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criteria?: string | null
+          description?: string | null
+          entry_rules?: string | null
+          exit_rules?: string | null
+          id?: string
+          name?: string
+          risk_management?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

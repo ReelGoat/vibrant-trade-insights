@@ -1,6 +1,7 @@
 
 import React from 'react';
 import Navigation from '@/components/layout/Navigation';
+import SetupsList from '@/components/setups/SetupsList';
 
 const Setups = () => {
   return (
@@ -8,9 +9,7 @@ const Setups = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Trading Setups</h1>
         
-        <div className="text-center py-16">
-          <p className="text-muted-foreground">Trading setups page coming soon</p>
-        </div>
+        <SetupsList />
       </div>
       
       <Navigation />
