@@ -196,12 +196,13 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
             
             <div className="space-y-2">
               <Label htmlFor="setup">Trading Setup</Label>
-              <Select value={setupId || ''} onValueChange={setSetupId}>
+              <Select value={setupId || undefined} onValueChange={setSetupId}>
                 <SelectTrigger id="setup">
                   <SelectValue placeholder="Select setup" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  {/* Fixed: Use "none" instead of empty string for the value */}
+                  <SelectItem value="none">None</SelectItem>
                   {setups.map((setup) => (
                     <SelectItem key={setup.id} value={setup.id}>
                       {setup.name}

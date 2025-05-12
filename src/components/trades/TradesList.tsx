@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, FileEdit, Trash2, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,6 +92,7 @@ const TradesList = () => {
     }
   };
 
+  
   const handleOpenDialog = (trade: Trade | null = null) => {
     setCurrentTrade(trade);
     setDialogOpen(true);
@@ -132,6 +132,7 @@ const TradesList = () => {
     }
   };
   
+  
   const calculateTotalPL = (): number => {
     return trades.reduce((sum, trade) => {
       return sum + (trade.profit_loss || 0);
@@ -152,6 +153,7 @@ const TradesList = () => {
   };
 
   return (
+    
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Trading Journal</h2>
