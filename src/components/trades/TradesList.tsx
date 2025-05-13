@@ -92,7 +92,6 @@ const TradesList = () => {
     }
   };
 
-  
   const handleOpenDialog = (trade: Trade | null = null) => {
     setCurrentTrade(trade);
     setDialogOpen(true);
@@ -132,7 +131,6 @@ const TradesList = () => {
     }
   };
   
-  
   const calculateTotalPL = (): number => {
     return trades.reduce((sum, trade) => {
       return sum + (trade.profit_loss || 0);
@@ -153,7 +151,6 @@ const TradesList = () => {
   };
 
   return (
-    
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Trading Journal</h2>
@@ -207,6 +204,7 @@ const TradesList = () => {
                 <TableHead>Entry/Exit</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>P&L</TableHead>
+                <TableHead>Rules</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -241,6 +239,22 @@ const TradesList = () => {
                   </TableCell>
                   <TableCell>{trade.quantity}</TableCell>
                   <TableCell>{renderProfitLoss(trade.profit_loss)}</TableCell>
+                  <TableCell>
+                    {/* Rules followed/violated count */}
+                    <div className="text-xs">
+                      {trade.rules_followed?.length ? (
+                        <span className="text-profit block">
+                          {trade.rules_followed.length} followed
+                        </span>
+                      ) : null}
+                      {trade.rules_violated?.length ? (
+                        <span className="text-loss block">
+                          {trade.rules_violated.length} violated
+                        </span>
+                      ) : null}
+                      {(!trade.rules_followed?.length && !trade.rules_violated?.length) ? '-' : null}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right space-x-1">
                     {trade.screenshot_url && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" asChild>

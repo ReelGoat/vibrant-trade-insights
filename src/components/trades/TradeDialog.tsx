@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Trade } from './TradesList';
 import type { TradingSetup } from '../setups/SetupsList';
+
+interface Rule {
+  id: string;
+  name: string;
+  followedCount: number;
+  notFollowedCount: number;
+  impact: number;
+}
 
 interface TradeDialogProps {
   open: boolean;
@@ -42,10 +51,32 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
   const [profitLoss, setProfitLoss] = useState('');
   const [notes, setNotes] = useState('');
   const [screenshotUrl, setScreenshotUrl] = useState('');
-  const [rulesFollowed, setRulesFollowed] = useState('');
-  const [rulesViolated, setRulesViolated] = useState('');
+  
+  // Rules management
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [followedRuleIds, setFollowedRuleIds] = useState<string[]>([]);
+  const [violatedRuleIds, setViolatedRuleIds] = useState<string[]>([]);
+  
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch rules from Supabase
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        // For now, we'll load rules from local storage as a fallback
+        // In a real app, this would come from the Supabase database
+        const storedRules = localStorage.getItem('tradingRules');
+        if (storedRules) {
+          setRules(JSON.parse(storedRules));
+        }
+      } catch (error) {
+        console.error('Error fetching rules:', error);
+      }
+    };
+    
+    fetchRules();
+  }, [open]);
 
   useEffect(() => {
     if (trade) {
@@ -60,12 +91,22 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
       setProfitLoss(trade.profit_loss ? trade.profit_loss.toString() : '');
       setNotes(trade.notes || '');
       setScreenshotUrl(trade.screenshot_url || '');
-      setRulesFollowed(trade.rules_followed ? trade.rules_followed.join(', ') : '');
-      setRulesViolated(trade.rules_violated ? trade.rules_violated.join(', ') : '');
+      
+      // Set followed and violated rules based on the trade data
+      setFollowedRuleIds(trade.rules_followed?.map(name => {
+        const rule = rules.find(r => r.name === name);
+        return rule ? rule.id : '';
+      }).filter(Boolean) || []);
+      
+      setViolatedRuleIds(trade.rules_violated?.map(name => {
+        const rule = rules.find(r => r.name === name);
+        return rule ? rule.id : '';
+      }).filter(Boolean) || []);
+      
     } else {
       resetForm();
     }
-  }, [trade, open]);
+  }, [trade, open, rules]);
 
   const formatDateForInput = (dateString: string): string => {
     const date = new Date(dateString);
@@ -84,13 +125,32 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
     setProfitLoss('');
     setNotes('');
     setScreenshotUrl('');
-    setRulesFollowed('');
-    setRulesViolated('');
+    setFollowedRuleIds([]);
+    setViolatedRuleIds([]);
   };
 
-  const parseArrayField = (value: string): string[] | null => {
-    if (!value.trim()) return null;
-    return value.split(',').map(item => item.trim()).filter(item => item !== '');
+  const toggleRuleFollowed = (ruleId: string) => {
+    setFollowedRuleIds(current => {
+      if (current.includes(ruleId)) {
+        return current.filter(id => id !== ruleId);
+      } else {
+        // Remove from violated if now followed
+        setViolatedRuleIds(prev => prev.filter(id => id !== ruleId));
+        return [...current, ruleId];
+      }
+    });
+  };
+
+  const toggleRuleViolated = (ruleId: string) => {
+    setViolatedRuleIds(current => {
+      if (current.includes(ruleId)) {
+        return current.filter(id => id !== ruleId);
+      } else {
+        // Remove from followed if now violated
+        setFollowedRuleIds(prev => prev.filter(id => id !== ruleId));
+        return [...current, ruleId];
+      }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,6 +182,31 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
         }
       }
       
+      // Convert rule IDs to rule names for storage
+      const followedRules = followedRuleIds.map(id => {
+        const rule = rules.find(r => r.id === id);
+        return rule ? rule.name : '';
+      }).filter(Boolean);
+      
+      const violatedRules = violatedRuleIds.map(id => {
+        const rule = rules.find(r => r.id === id);
+        return rule ? rule.name : '';
+      }).filter(Boolean);
+      
+      // Update rules statistics (in a real app this would be done in a transaction or backend)
+      const updatedRules = rules.map(rule => {
+        if (followedRuleIds.includes(rule.id)) {
+          return { ...rule, followedCount: rule.followedCount + 1 };
+        }
+        if (violatedRuleIds.includes(rule.id)) {
+          return { ...rule, notFollowedCount: rule.notFollowedCount + 1 };
+        }
+        return rule;
+      });
+      
+      // Save updated rules to local storage (would be DB in real app)
+      localStorage.setItem('tradingRules', JSON.stringify(updatedRules));
+      
       const tradeData = {
         symbol: symbol.toUpperCase(),
         setup_id: setupId,
@@ -134,8 +219,8 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
         profit_loss: calculatedPL ? parseFloat(calculatedPL) : null,
         notes: notes || null,
         screenshot_url: screenshotUrl || null,
-        rules_followed: parseArrayField(rulesFollowed),
-        rules_violated: parseArrayField(rulesViolated),
+        rules_followed: followedRules.length > 0 ? followedRules : null,
+        rules_violated: violatedRules.length > 0 ? violatedRules : null,
         updated_at: new Date().toISOString()
       };
 
@@ -196,12 +281,14 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
             
             <div className="space-y-2">
               <Label htmlFor="setup">Trading Setup</Label>
-              <Select value={setupId || undefined} onValueChange={setSetupId}>
+              <Select 
+                value={setupId || ""} 
+                onValueChange={(value) => setSetupId(value === "none" ? null : value)}
+              >
                 <SelectTrigger id="setup">
                   <SelectValue placeholder="Select setup" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Fixed: Use "none" instead of empty string for the value */}
                   <SelectItem value="none">None</SelectItem>
                   {setups.map((setup) => (
                     <SelectItem key={setup.id} value={setup.id}>
@@ -325,29 +412,47 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="rulesFollowed">Rules Followed (comma-separated)</Label>
-              <Textarea 
-                id="rulesFollowed" 
-                value={rulesFollowed} 
-                onChange={(e) => setRulesFollowed(e.target.value)}
-                placeholder="e.g., Waited for confirmation, Used proper position size"
-                rows={2}
-              />
+          {/* Rules Followed Section */}
+          {rules.length > 0 && (
+            <div className="space-y-2 border rounded-lg p-4">
+              <h3 className="font-medium mb-2">Trading Rules</h3>
+              <div className="grid grid-cols-1 gap-3">
+                {rules.map(rule => (
+                  <div key={rule.id} className="flex flex-col space-y-1">
+                    <div className="text-sm font-medium">{rule.name}</div>
+                    <div className="flex space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`followed-${rule.id}`} 
+                          checked={followedRuleIds.includes(rule.id)}
+                          onCheckedChange={() => toggleRuleFollowed(rule.id)}
+                        />
+                        <label 
+                          htmlFor={`followed-${rule.id}`}
+                          className="text-sm text-muted-foreground"
+                        >
+                          Followed
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`violated-${rule.id}`}
+                          checked={violatedRuleIds.includes(rule.id)}
+                          onCheckedChange={() => toggleRuleViolated(rule.id)}
+                        />
+                        <label 
+                          htmlFor={`violated-${rule.id}`}
+                          className="text-sm text-muted-foreground"
+                        >
+                          Violated
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="rulesViolated">Rules Violated (comma-separated)</Label>
-              <Textarea 
-                id="rulesViolated" 
-                value={rulesViolated} 
-                onChange={(e) => setRulesViolated(e.target.value)}
-                placeholder="e.g., Moved stop loss, Averaged down"
-                rows={2}
-              />
-            </div>
-          </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onClose()} disabled={loading}>
