@@ -8,29 +8,17 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+import TradeBasicInfoFields from './dialog/TradeBasicInfoFields';
+import TradeEntryExitFields from './dialog/TradeEntryExitFields';
+import TradeNotesFields from './dialog/TradeNotesFields';
+import TradeRulesSection, { Rule } from './dialog/TradeRulesSection';
+import { formatDateForInput } from './dialog/TradeFormUtils';
+
 import type { Trade } from './TradesList';
 import type { TradingSetup } from '../setups/SetupsList';
-
-interface Rule {
-  id: string;
-  name: string;
-  followedCount: number;
-  notFollowedCount: number;
-  impact: number;
-}
 
 interface TradeDialogProps {
   open: boolean;
@@ -107,11 +95,6 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
       resetForm();
     }
   }, [trade, open, rules]);
-
-  const formatDateForInput = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
-  };
 
   const resetForm = () => {
     setSymbol('');
@@ -267,192 +250,45 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="symbol">Symbol *</Label>
-              <Input 
-                id="symbol" 
-                value={symbol} 
-                onChange={(e) => setSymbol(e.target.value)}
-                placeholder="e.g., AAPL"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="setup">Trading Setup</Label>
-              <Select 
-                value={setupId || ""} 
-                onValueChange={(value) => setSetupId(value === "none" ? null : value)}
-              >
-                <SelectTrigger id="setup">
-                  <SelectValue placeholder="Select setup" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {setups.map((setup) => (
-                    <SelectItem key={setup.id} value={setup.id}>
-                      {setup.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <TradeBasicInfoFields 
+            symbol={symbol}
+            setSymbol={setSymbol}
+            setupId={setupId}
+            setSetupId={setSetupId}
+            entryDate={entryDate}
+            setEntryDate={setEntryDate}
+            exitDate={exitDate}
+            setExitDate={setExitDate}
+            setups={setups}
+          />
+          
+          <TradeEntryExitFields 
+            direction={direction}
+            setDirection={setDirection}
+            quantity={quantity}
+            setQuantity={setQuantity}
+            profitLoss={profitLoss}
+            setProfitLoss={setProfitLoss}
+            entryPrice={entryPrice}
+            setEntryPrice={setEntryPrice}
+            exitPrice={exitPrice}
+            setExitPrice={setExitPrice}
+          />
+          
+          <TradeNotesFields 
+            notes={notes}
+            setNotes={setNotes}
+            screenshotUrl={screenshotUrl}
+            setScreenshotUrl={setScreenshotUrl}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="entryDate">Entry Date *</Label>
-              <Input 
-                id="entryDate" 
-                type="date" 
-                value={entryDate} 
-                onChange={(e) => setEntryDate(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="exitDate">Exit Date</Label>
-              <Input 
-                id="exitDate" 
-                type="date" 
-                value={exitDate} 
-                onChange={(e) => setExitDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="direction">Direction *</Label>
-              <Select value={direction} onValueChange={(value: 'long' | 'short') => setDirection(value)}>
-                <SelectTrigger id="direction">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="long">Long</SelectItem>
-                  <SelectItem value="short">Short</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input 
-                id="quantity" 
-                type="number"
-                min="1"
-                step="1"
-                value={quantity} 
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="e.g., 100"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="profitLoss">P&L ($)</Label>
-              <Input 
-                id="profitLoss" 
-                type="number" 
-                step="0.01"
-                value={profitLoss} 
-                onChange={(e) => setProfitLoss(e.target.value)}
-                placeholder="Auto-calculated if blank"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="entryPrice">Entry Price *</Label>
-              <Input 
-                id="entryPrice" 
-                type="number"
-                step="0.01"
-                value={entryPrice} 
-                onChange={(e) => setEntryPrice(e.target.value)}
-                placeholder="e.g., 150.75"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="exitPrice">Exit Price</Label>
-              <Input 
-                id="exitPrice" 
-                type="number" 
-                step="0.01"
-                value={exitPrice} 
-                onChange={(e) => setExitPrice(e.target.value)}
-                placeholder="e.g., 155.50"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea 
-              id="notes" 
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did you learn from this trade?"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="screenshotUrl">Screenshot URL</Label>
-            <Input 
-              id="screenshotUrl" 
-              value={screenshotUrl} 
-              onChange={(e) => setScreenshotUrl(e.target.value)}
-              placeholder="URL to your trade screenshot"
-            />
-          </div>
-
-          {/* Rules Followed Section */}
-          {rules.length > 0 && (
-            <div className="space-y-2 border rounded-lg p-4">
-              <h3 className="font-medium mb-2">Trading Rules</h3>
-              <div className="grid grid-cols-1 gap-3">
-                {rules.map(rule => (
-                  <div key={rule.id} className="flex flex-col space-y-1">
-                    <div className="text-sm font-medium">{rule.name}</div>
-                    <div className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`followed-${rule.id}`} 
-                          checked={followedRuleIds.includes(rule.id)}
-                          onCheckedChange={() => toggleRuleFollowed(rule.id)}
-                        />
-                        <label 
-                          htmlFor={`followed-${rule.id}`}
-                          className="text-sm text-muted-foreground"
-                        >
-                          Followed
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`violated-${rule.id}`}
-                          checked={violatedRuleIds.includes(rule.id)}
-                          onCheckedChange={() => toggleRuleViolated(rule.id)}
-                        />
-                        <label 
-                          htmlFor={`violated-${rule.id}`}
-                          className="text-sm text-muted-foreground"
-                        >
-                          Violated
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <TradeRulesSection 
+            rules={rules}
+            followedRuleIds={followedRuleIds}
+            violatedRuleIds={violatedRuleIds}
+            toggleRuleFollowed={toggleRuleFollowed}
+            toggleRuleViolated={toggleRuleViolated}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onClose()} disabled={loading}>
