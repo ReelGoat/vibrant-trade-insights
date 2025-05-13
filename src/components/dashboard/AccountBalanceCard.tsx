@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface AccountBalanceCardProps {
   currentBalance: number;
@@ -23,7 +24,8 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   const [tempCurrentBalance, setTempCurrentBalance] = useState(initialCurrentBalance.toString());
   const [tempInitialDeposit, setTempInitialDeposit] = useState(initialInitialDeposit.toString());
 
-  const percentageChange = ((currentBalance - initialDeposit) / initialDeposit) * 100;
+  const percentageChange = initialDeposit > 0 ? 
+    ((currentBalance - initialDeposit) / initialDeposit) * 100 : 0;
   const isProfit = percentageChange >= 0;
   
   const handleSaveSettings = () => {
@@ -68,10 +70,13 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${currentBalance.toLocaleString()}</div>
+          <div className="text-2xl font-bold">${currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
           <div className="flex justify-between items-center mt-1 text-sm">
-            <span className="text-muted-foreground">Initial: ${initialDeposit.toLocaleString()}</span>
-            <span className={`font-medium ${isProfit ? 'text-profit' : 'text-loss'}`}>
+            <span className="text-muted-foreground">Initial: ${initialDeposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            <span className={cn(
+              "font-medium",
+              isProfit ? "text-emerald-500" : "text-red-500"
+            )}>
               {isProfit ? '+' : ''}{percentageChange.toFixed(2)}%
             </span>
           </div>
@@ -89,6 +94,8 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
               <Input
                 id="current-balance"
                 className="col-span-3"
+                type="number"
+                step="0.01"
                 value={tempCurrentBalance}
                 onChange={(e) => setTempCurrentBalance(e.target.value)}
               />
@@ -98,6 +105,8 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
               <Input
                 id="initial-deposit"
                 className="col-span-3"
+                type="number"
+                step="0.01"
                 value={tempInitialDeposit}
                 onChange={(e) => setTempInitialDeposit(e.target.value)}
               />
