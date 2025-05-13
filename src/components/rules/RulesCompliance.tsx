@@ -17,18 +17,13 @@ interface Rule {
 
 interface RulesComplianceProps {
   rules: Rule[];
+  onRulesChange: React.Dispatch<React.SetStateAction<Rule[]>>;
 }
 
-const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }) => {
-  const [rules, setRules] = useState<Rule[]>(initialRules);
+const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules, onRulesChange }) => {
   const [newRuleName, setNewRuleName] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Update local rules when props change
-  React.useEffect(() => {
-    setRules(initialRules);
-  }, [initialRules]);
-
   const addRule = () => {
     if (!newRuleName.trim()) {
       toast({
@@ -47,7 +42,7 @@ const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }
       impact: 0,
     };
     
-    setRules([...rules, newRule]);
+    onRulesChange(prevRules => [...prevRules, newRule]);
     setNewRuleName('');
     setDialogOpen(false);
     
@@ -59,7 +54,7 @@ const RulesCompliance: React.FC<RulesComplianceProps> = ({ rules: initialRules }
 
   const deleteRule = (id: string) => {
     const ruleToDelete = rules.find(rule => rule.id === id);
-    setRules(rules.filter(rule => rule.id !== id));
+    onRulesChange(prevRules => prevRules.filter(rule => rule.id !== id));
     
     if (ruleToDelete) {
       toast({
