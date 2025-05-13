@@ -17,7 +17,7 @@ import TradeNotesFields from './dialog/TradeNotesFields';
 import TradeRulesSection, { Rule } from './dialog/TradeRulesSection';
 import { formatDateForInput } from './dialog/TradeFormUtils';
 
-import type { Trade } from './TradesList';
+import type { Trade } from './types/TradeTypes';
 import type { TradingSetup } from '../setups/SetupsList';
 
 interface TradeDialogProps {

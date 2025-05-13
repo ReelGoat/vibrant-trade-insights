@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +12,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import type { Trade } from '@/components/trades/TradesList';
+import type { Trade } from '@/components/trades/types/TradeTypes';
 
 const History = () => {
   const [trades, setTrades] = useState<Trade[]>([]);

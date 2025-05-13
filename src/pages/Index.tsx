@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +12,7 @@ import TimeHeldAnalysis from '@/components/dashboard/TimeHeldAnalysis';
 import Navigation from '@/components/layout/Navigation';
 import { DollarSign, Percent, Activity, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
-import { Trade } from '@/components/trades/TradesList';
+import { Trade } from '@/components/trades/types/TradeTypes';
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());

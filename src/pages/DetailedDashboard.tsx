@@ -8,7 +8,7 @@ import TradingHealthTrend from '@/components/dashboard/TradingHealthTrend';
 import PerformanceBars from '@/components/dashboard/PerformanceBars';
 import TopPerforming from '@/components/dashboard/TopPerforming';
 import TimeHeldAnalysis from '@/components/dashboard/TimeHeldAnalysis';
-import { Trade } from '@/components/trades/TradesList';
+import { Trade } from '@/components/trades/types/TradeTypes';
 import { format, parseISO, startOfWeek } from 'date-fns';
 
 const DetailedDashboard = () => {
