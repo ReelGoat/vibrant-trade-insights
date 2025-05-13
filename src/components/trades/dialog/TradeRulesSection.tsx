@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export interface Rule {
   id: string;
@@ -30,44 +31,48 @@ const TradeRulesSection: React.FC<TradeRulesSectionProps> = ({
   }
 
   return (
-    <div className="space-y-2 border rounded-lg p-4">
-      <h3 className="font-medium mb-2">Trading Rules</h3>
-      <div className="grid grid-cols-1 gap-3">
-        {rules.map(rule => (
-          <div key={rule.id} className="flex flex-col space-y-1">
-            <div className="text-sm font-medium">{rule.name}</div>
-            <div className="flex space-x-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`followed-${rule.id}`} 
-                  checked={followedRuleIds.includes(rule.id)}
-                  onCheckedChange={() => toggleRuleFollowed(rule.id)}
-                />
-                <label 
-                  htmlFor={`followed-${rule.id}`}
-                  className="text-sm text-muted-foreground"
-                >
-                  Followed
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`violated-${rule.id}`}
-                  checked={violatedRuleIds.includes(rule.id)}
-                  onCheckedChange={() => toggleRuleViolated(rule.id)}
-                />
-                <label 
-                  htmlFor={`violated-${rule.id}`}
-                  className="text-sm text-muted-foreground"
-                >
-                  Violated
-                </label>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-md">Trading Rules</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 gap-3">
+          {rules.map(rule => (
+            <div key={rule.id} className="bg-muted/30 rounded-md p-3">
+              <div className="text-sm font-medium mb-2">{rule.name}</div>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`followed-${rule.id}`} 
+                    checked={followedRuleIds.includes(rule.id)}
+                    onCheckedChange={() => toggleRuleFollowed(rule.id)}
+                  />
+                  <label 
+                    htmlFor={`followed-${rule.id}`}
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    Followed
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`violated-${rule.id}`}
+                    checked={violatedRuleIds.includes(rule.id)}
+                    onCheckedChange={() => toggleRuleViolated(rule.id)}
+                  />
+                  <label 
+                    htmlFor={`violated-${rule.id}`}
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    Violated
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

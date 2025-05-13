@@ -16,6 +16,7 @@ import TradeEntryExitFields from './dialog/TradeEntryExitFields';
 import TradeNotesFields from './dialog/TradeNotesFields';
 import TradeRulesSection, { Rule } from './dialog/TradeRulesSection';
 import { formatDateForInput } from './dialog/TradeFormUtils';
+import { useRules } from './hooks/useRules';
 
 import type { Trade } from './types/TradeTypes';
 import type { TradingSetup } from '../setups/SetupsList';
@@ -41,30 +42,12 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
   const [screenshotUrl, setScreenshotUrl] = useState('');
   
   // Rules management
-  const [rules, setRules] = useState<Rule[]>([]);
+  const { rules, setRules } = useRules();
   const [followedRuleIds, setFollowedRuleIds] = useState<string[]>([]);
   const [violatedRuleIds, setViolatedRuleIds] = useState<string[]>([]);
   
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
-  // Fetch rules from Supabase
-  useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        // For now, we'll load rules from local storage as a fallback
-        // In a real app, this would come from the Supabase database
-        const storedRules = localStorage.getItem('tradingRules');
-        if (storedRules) {
-          setRules(JSON.parse(storedRules));
-        }
-      } catch (error) {
-        console.error('Error fetching rules:', error);
-      }
-    };
-    
-    fetchRules();
-  }, [open]);
 
   useEffect(() => {
     if (trade) {
@@ -176,7 +159,7 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
         return rule ? rule.name : '';
       }).filter(Boolean);
       
-      // Update rules statistics (in a real app this would be done in a transaction or backend)
+      // Update rules statistics
       const updatedRules = rules.map(rule => {
         if (followedRuleIds.includes(rule.id)) {
           return { ...rule, followedCount: rule.followedCount + 1 };
@@ -187,8 +170,8 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
         return rule;
       });
       
-      // Save updated rules to local storage (would be DB in real app)
-      localStorage.setItem('tradingRules', JSON.stringify(updatedRules));
+      // Save updated rules
+      setRules(updatedRules);
       
       const tradeData = {
         symbol: symbol.toUpperCase(),
@@ -275,19 +258,19 @@ const TradeDialog: React.FC<TradeDialogProps> = ({ open, onClose, trade, setups 
             setExitPrice={setExitPrice}
           />
           
-          <TradeNotesFields 
-            notes={notes}
-            setNotes={setNotes}
-            screenshotUrl={screenshotUrl}
-            setScreenshotUrl={setScreenshotUrl}
-          />
-
           <TradeRulesSection 
             rules={rules}
             followedRuleIds={followedRuleIds}
             violatedRuleIds={violatedRuleIds}
             toggleRuleFollowed={toggleRuleFollowed}
             toggleRuleViolated={toggleRuleViolated}
+          />
+          
+          <TradeNotesFields 
+            notes={notes}
+            setNotes={setNotes}
+            screenshotUrl={screenshotUrl}
+            setScreenshotUrl={setScreenshotUrl}
           />
 
           <DialogFooter>

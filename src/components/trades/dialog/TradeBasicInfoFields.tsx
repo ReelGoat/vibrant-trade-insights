@@ -49,7 +49,10 @@ const TradeBasicInfoFields: React.FC<TradeBasicInfoFieldsProps> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="setup">Trading Setup</Label>
+          <Label htmlFor="setup" className="flex items-center">
+            Trading Setup
+            <span className="ml-1 text-xs text-muted-foreground">(From your setups list)</span>
+          </Label>
           <Select 
             value={setupId || ""} 
             onValueChange={(value) => setSetupId(value === "none" ? null : value)}
