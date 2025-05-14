@@ -14,6 +14,19 @@ const TradeStats: React.FC<TradeStatsProps> = ({ trades }) => {
     }, 0);
   };
 
+  const formatCurrency = (value: number): string => {
+    return Math.abs(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const totalPL = calculateTotalPL();
+  const winningTrades = trades.filter(trade => (trade.profit_loss || 0) > 0);
+  const winRate = trades.length > 0 
+    ? ((winningTrades.length / trades.length) * 100) 
+    : 0;
+
   return (
     <div className="flex flex-wrap gap-4 mb-4">
       <Card className="p-4 w-full sm:w-auto flex-1">
@@ -22,15 +35,15 @@ const TradeStats: React.FC<TradeStatsProps> = ({ trades }) => {
       </Card>
       <Card className="p-4 w-full sm:w-auto flex-1">
         <div className="text-sm text-muted-foreground">Total P&L</div>
-        <div className={`text-2xl font-bold ${calculateTotalPL() >= 0 ? 'text-profit' : 'text-loss'}`}>
-          {calculateTotalPL() >= 0 ? '+' : '-'}${Math.abs(calculateTotalPL()).toFixed(2)}
+        <div className={`text-2xl font-bold ${totalPL >= 0 ? 'text-profit' : 'text-loss'}`}>
+          {totalPL >= 0 ? '+' : '-'}${formatCurrency(totalPL)}
         </div>
       </Card>
       <Card className="p-4 w-full sm:w-auto flex-1">
         <div className="text-sm text-muted-foreground">Win Rate</div>
         <div className="text-2xl font-bold">
           {trades.length > 0 
-            ? `${((trades.filter(t => (t.profit_loss || 0) > 0).length / trades.length) * 100).toFixed(1)}%` 
+            ? `${winRate.toFixed(1)}%` 
             : '0%'}
         </div>
       </Card>
