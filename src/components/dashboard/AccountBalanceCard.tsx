@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AccountBalanceCardProps {
   currentBalance: number;
@@ -19,23 +20,49 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   initialDeposit: initialInitialDeposit,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [currentBalance, setCurrentBalance] = useState(initialCurrentBalance);
   const [initialDeposit, setInitialDeposit] = useState(initialInitialDeposit);
+  const [currentBalance, setCurrentBalance] = useState(initialCurrentBalance);
   const [tempCurrentBalance, setTempCurrentBalance] = useState(initialCurrentBalance.toString());
   const [tempInitialDeposit, setTempInitialDeposit] = useState(initialInitialDeposit.toString());
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch trades and calculate total profit/loss
+  useEffect(() => {
+    const fetchTradesAndCalculateBalance = async () => {
+      try {
+        setIsLoading(true);
+        const { data: trades, error } = await supabase
+          .from('trades')
+          .select('profit_loss');
+        
+        if (error) throw error;
+        
+        const totalProfitLoss = trades.reduce((sum, trade) => 
+          sum + (trade.profit_loss || 0), 0);
+        
+        // Calculate new balance based on initial deposit and P&L
+        setCurrentBalance(initialDeposit + totalProfitLoss);
+      } catch (error) {
+        console.error('Error fetching trades:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTradesAndCalculateBalance();
+  }, [initialDeposit]);
 
   const percentageChange = initialDeposit > 0 ? 
     ((currentBalance - initialDeposit) / initialDeposit) * 100 : 0;
   const isProfit = percentageChange >= 0;
   
   const handleSaveSettings = () => {
-    const newBalance = parseFloat(tempCurrentBalance);
     const newDeposit = parseFloat(tempInitialDeposit);
     
-    if (isNaN(newBalance) || isNaN(newDeposit)) {
+    if (isNaN(newDeposit)) {
       toast({
-        title: "Invalid values",
-        description: "Please enter valid numbers for both fields.",
+        title: "Invalid value",
+        description: "Please enter a valid number for initial deposit.",
         variant: "destructive"
       });
       return;
@@ -50,7 +77,6 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       return;
     }
     
-    setCurrentBalance(newBalance);
     setInitialDeposit(newDeposit);
     setShowSettings(false);
     
@@ -70,7 +96,11 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          {isLoading ? (
+            <div className="text-2xl font-bold">Loading...</div>
+          ) : (
+            <div className="text-2xl font-bold">${currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          )}
           <div className="flex justify-between items-center mt-1 text-sm">
             <span className="text-muted-foreground">Initial: ${initialDeposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             <span className={cn(
@@ -89,17 +119,6 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
             <DialogTitle>Account Balance Settings</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="current-balance" className="text-right">Current Balance</Label>
-              <Input
-                id="current-balance"
-                className="col-span-3"
-                type="number"
-                step="0.01"
-                value={tempCurrentBalance}
-                onChange={(e) => setTempCurrentBalance(e.target.value)}
-              />
-            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="initial-deposit" className="text-right">Initial Deposit</Label>
               <Input
