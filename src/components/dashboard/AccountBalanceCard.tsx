@@ -25,6 +25,39 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   const [tempInitialDeposit, setTempInitialDeposit] = useState(initialInitialDeposit.toString());
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load saved initial deposit value from Supabase
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('account_settings')
+          .select('initial_deposit')
+          .single();
+        
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // No settings exist yet, create with default value
+            await supabase
+              .from('account_settings')
+              .insert([{ id: 1, initial_deposit: initialDeposit }]);
+          } else {
+            console.error('Error fetching account settings:', error);
+          }
+          return;
+        }
+        
+        if (data) {
+          setInitialDeposit(data.initial_deposit);
+          setTempInitialDeposit(data.initial_deposit.toString());
+        }
+      } catch (error) {
+        console.error('Failed to load account settings:', error);
+      }
+    };
+    
+    loadSettings();
+  }, []);
+
   // Fetch trades and calculate total profit/loss
   useEffect(() => {
     const fetchTradesAndCalculateBalance = async () => {
@@ -55,7 +88,7 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
     ((currentBalance - initialDeposit) / initialDeposit) * 100 : 0;
   const isProfit = percentageChange >= 0;
   
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     const newDeposit = parseFloat(tempInitialDeposit);
     
     if (isNaN(newDeposit)) {
@@ -76,13 +109,29 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       return;
     }
     
-    setInitialDeposit(newDeposit);
-    setShowSettings(false);
-    
-    toast({
-      title: "Settings updated",
-      description: "Account balance settings have been updated.",
-    });
+    try {
+      // Save the new initial deposit value to Supabase
+      const { error } = await supabase
+        .from('account_settings')
+        .upsert({ id: 1, initial_deposit: newDeposit });
+      
+      if (error) throw error;
+      
+      setInitialDeposit(newDeposit);
+      setShowSettings(false);
+      
+      toast({
+        title: "Settings updated",
+        description: "Account balance settings have been updated.",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
