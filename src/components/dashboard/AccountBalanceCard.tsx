@@ -31,18 +31,11 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       try {
         const { data, error } = await supabase
           .from('account_settings')
-          .select('initial_deposit')
+          .select('*')
           .single();
         
         if (error) {
-          if (error.code === 'PGRST116') {
-            // No settings exist yet, create with default value
-            await supabase
-              .from('account_settings')
-              .insert([{ id: 1, initial_deposit: initialDeposit }]);
-          } else {
-            console.error('Error fetching account settings:', error);
-          }
+          console.error('Error fetching account settings:', error);
           return;
         }
         
@@ -113,7 +106,8 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       // Save the new initial deposit value to Supabase
       const { error } = await supabase
         .from('account_settings')
-        .upsert({ id: 1, initial_deposit: newDeposit });
+        .update({ initial_deposit: newDeposit })
+        .eq('id', 1);
       
       if (error) throw error;
       
