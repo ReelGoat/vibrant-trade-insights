@@ -22,7 +22,6 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [initialDeposit, setInitialDeposit] = useState(initialInitialDeposit);
   const [currentBalance, setCurrentBalance] = useState(initialCurrentBalance);
-  const [tempCurrentBalance, setTempCurrentBalance] = useState(initialCurrentBalance.toString());
   const [tempInitialDeposit, setTempInitialDeposit] = useState(initialInitialDeposit.toString());
   const [isLoading, setIsLoading] = useState(false);
 
