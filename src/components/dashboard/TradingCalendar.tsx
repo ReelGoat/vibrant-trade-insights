@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { format, addMonths, subMonths, isSameDay, parseISO } from 'date-fns';
+import { format, addMonths, subMonths } from 'date-fns';
 import { Calendar as CalendarIcon, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
-import type { Trade } from '@/components/trades/types/TradeTypes';
+import { cn } from "@/lib/utils";
 
 interface TradingCalendarProps {
   onDateSelect: (date: Date | undefined) => void;
@@ -93,18 +93,18 @@ const TradingCalendar: React.FC<TradingCalendarProps> = ({ onDateSelect }) => {
     handleSelect(today);
   };
 
-  // Function to determine day class names based on trading data
-  const getDayClassName = (day: Date | undefined) => {
-    if (!day) return "";
+  // Custom day rendering to show profitable/loss days
+  const getDayClassName = (day: Date): string | undefined => {
+    if (!day) return undefined;
     
     const dayString = format(day, 'yyyy-MM-dd');
     const dayData = tradingDays.find(d => d.date === dayString);
     
     if (dayData) {
-      return dayData.isProfitable ? "day-profitable" : "day-loss";
+      return dayData.isProfitable ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-red-500 text-white hover:bg-red-600";
     }
     
-    return "";
+    return undefined;
   };
 
   return (
@@ -144,21 +144,21 @@ const TradingCalendar: React.FC<TradingCalendarProps> = ({ onDateSelect }) => {
           month={month}
           onMonthChange={setMonth}
           className="p-0 pointer-events-auto"
-          modifiersClassNames={{
-            day_profitable: "bg-profit text-primary-foreground",
-            day_loss: "bg-loss text-primary-foreground"
-          }}
           modifiers={{
-            day_profitable: (day) => {
+            profitable: (day) => {
               const dayString = format(day, 'yyyy-MM-dd');
               const dayData = tradingDays.find(d => d.date === dayString);
               return !!dayData && dayData.isProfitable;
             },
-            day_loss: (day) => {
+            loss: (day) => {
               const dayString = format(day, 'yyyy-MM-dd');
               const dayData = tradingDays.find(d => d.date === dayString);
               return !!dayData && !dayData.isProfitable;
             }
+          }}
+          modifiersClassNames={{
+            profitable: "bg-emerald-500 text-white hover:bg-emerald-600",
+            loss: "bg-red-500 text-white hover:bg-red-600"
           }}
           classNames={{
             day_selected: "bg-primary text-primary-foreground",
