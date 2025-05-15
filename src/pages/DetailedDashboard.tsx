@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import TopPerforming from '@/components/dashboard/TopPerforming';
 import TimeHeldAnalysis from '@/components/dashboard/TimeHeldAnalysis';
 import { Trade } from '@/components/trades/types/TradeTypes';
 import { format, parseISO, startOfWeek } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 const DetailedDashboard = () => {
   // Fetch trades data
@@ -31,7 +31,7 @@ const DetailedDashboard = () => {
   const calculateCircularData = () => {
     if (!tradesData || tradesData.length === 0) {
       return {
-        profits: { title: 'Total Profits', value: 0, total: 1, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
+        profits: { title: 'Total Profits', value: 0, total: 1, suffix: '$', colors: { positive: '#22c55e', negative: '#ef4444' } },
         winRate: { title: 'Win Rate', value: 0, total: 100, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
         rulesFollowed: { title: 'Rules Followed', value: 0, total: 100, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
         profitFactor: { title: 'Profit Factor', value: 0, total: 3, suffix: '', colors: { positive: '#22c55e', negative: '#333333' } },
@@ -61,8 +61,19 @@ const DetailedDashboard = () => {
     const totalLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0));
     const profitFactor = totalLoss > 0 ? Number((totalProfit / totalLoss).toFixed(2)) : totalProfit > 0 ? 3 : 0;
     
+    const maxValue = Math.max(Math.abs(totalPL), 1000); // Ensure we have a reasonable scale
+
     return {
-      profits: { title: 'Total Profits', value: totalPL, total: Math.max(Math.abs(totalPL), 1000), suffix: '$', colors: { positive: '#22c55e', negative: '#333333' } },
+      profits: { 
+        title: 'Total Profits', 
+        value: totalPL, 
+        total: maxValue, 
+        suffix: '$', 
+        colors: { 
+          positive: '#22c55e', 
+          negative: '#ef4444' // Using a red color for negative values
+        } 
+      },
       winRate: { title: 'Win Rate', value: winRate, total: 100, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
       rulesFollowed: { title: 'Rules Followed', value: rulesFollowedPercentage, total: 100, suffix: '%', colors: { positive: '#22c55e', negative: '#333333' } },
       profitFactor: { title: 'Profit Factor', value: Math.min(profitFactor, 3), total: 3, suffix: '', colors: { positive: '#22c55e', negative: '#333333' } },
