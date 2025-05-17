@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +14,8 @@ export interface TradingSetup {
   entry_rules: string | null;
   exit_rules: string | null;
   risk_management: string | null;
+  category: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -143,7 +144,12 @@ const SetupsList = () => {
             <Card key={setup.id} className="hover:bg-secondary/10 transition-colors">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <h3 className="font-medium text-lg">{setup.name}</h3>
+                  <div>
+                    <h3 className="font-medium text-lg">{setup.name}</h3>
+                    {!setup.is_active && (
+                      <span className="text-xs text-muted-foreground">(Inactive)</span>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Button 
                       variant="ghost" 
@@ -171,6 +177,9 @@ const SetupsList = () => {
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="text-xs bg-secondary/30 px-2 py-1 rounded-full">
+                    {setup.category.charAt(0).toUpperCase() + setup.category.slice(1)}
+                  </div>
                   {setup.criteria && <div className="text-xs bg-secondary/30 px-2 py-1 rounded-full">Has Criteria</div>}
                   {setup.entry_rules && <div className="text-xs bg-secondary/30 px-2 py-1 rounded-full">Entry Rules</div>}
                   {setup.exit_rules && <div className="text-xs bg-secondary/30 px-2 py-1 rounded-full">Exit Rules</div>}

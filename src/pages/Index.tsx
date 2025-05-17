@@ -10,15 +10,19 @@ import PerformanceBars from '@/components/dashboard/PerformanceBars';
 import TopPerforming from '@/components/dashboard/TopPerforming';
 import TimeHeldAnalysis from '@/components/dashboard/TimeHeldAnalysis';
 import Navigation from '@/components/layout/Navigation';
-import { DollarSign, Percent, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { DollarSign, Percent, Activity, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 import { Trade } from '@/components/trades/types/TradeTypes';
+import { SidebarInset } from '@/components/ui/sidebar';
+import { Button } from "@/components/ui/button";
+import ExportDialog from '@/components/export/ExportDialog';
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   const [currentBalance, setCurrentBalance] = useState<number>(25000);
   const [initialDeposit, setInitialDeposit] = useState<number>(20000);
+  const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
 
   // Fetch trades data
   const { data: tradesData, isLoading } = useQuery({
@@ -424,85 +428,110 @@ const Dashboard = () => {
     console.log('Selected date:', date);
   };
 
-  const metrics = calculateMetrics();
-  const circularData = calculateCircularData();
-  const healthData = calculateHealthTrend();
-  const dayPerformance = calculateDayPerformance();
-  const timePerformance = calculateTimePerformance();
-  const topSetups = calculateTopSetups();
-  const topSymbols = calculateTopSymbols();
-  const timeHeldCategories = calculateTimeHeldAnalysis();
+  // Memoize all calculations
+  const metrics = React.useMemo(() => calculateMetrics(), [tradesData]);
+  const circularData = React.useMemo(() => calculateCircularData(), [tradesData]);
+  const healthData = React.useMemo(() => calculateHealthTrend(), [tradesData]);
+  const dayPerformance = React.useMemo(() => calculateDayPerformance(), [tradesData]);
+  const timePerformance = React.useMemo(() => calculateTimePerformance(), [tradesData]);
+  const topSetups = React.useMemo(() => calculateTopSetups(), [tradesData]);
+  const topSymbols = React.useMemo(() => calculateTopSymbols(), [tradesData]);
+  const timeHeldCategories = React.useMemo(() => calculateTimeHeldAnalysis(), [tradesData]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-16">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Trading Journal</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="md:col-span-1">
-            <AccountBalanceCard currentBalance={currentBalance} initialDeposit={initialDeposit} />
-          </div>
-          <div className="md:col-span-2">
-            <TradingCalendar onDateSelect={handleDateSelect} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <KeyMetricsCard metric={metrics.totalPL} />
-          <KeyMetricsCard metric={metrics.winRate} />
-          <KeyMetricsCard metric={metrics.profitFactor} />
-          <KeyMetricsCard metric={metrics.averageWin} />
-          <KeyMetricsCard metric={metrics.averageLoss} />
-          <KeyMetricsCard metric={metrics.maxDrawdown} />
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading trade data...</p>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-xl font-bold mb-4">Detailed Analytics</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <CircularChart data={circularData.profits} />
-              <CircularChart data={circularData.winRate} />
-              <CircularChart data={circularData.rulesFollowed} />
-              <CircularChart data={circularData.profitFactor} />
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <TradingHealthTrend 
-                data={healthData} 
-                thresholds={{ outperforming: 2.5, good: 2.0, caution: 1.5 }} 
-              />
-              <PerformanceBars 
-                title="Performance by Day" 
-                data={dayPerformance} 
-                dataKey="name" 
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <PerformanceBars 
-                title="Performance by Time" 
-                data={timePerformance} 
-                dataKey="name" 
-              />
-              <div className="grid grid-cols-1 gap-6">
-                <TopPerforming title="Top Performing Setups" data={topSetups} />
-                <TopPerforming title="Top Performing Symbols" data={topSymbols} />
-              </div>
-            </div>
-            
-            <div className="mb-8">
-              <TimeHeldAnalysis categories={timeHeldCategories} />
-            </div>
-          </>
-        )}
-      </div>
-      
+    <div className="flex min-h-screen bg-background text-foreground">
       <Navigation />
+      <SidebarInset>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportDialogOpen(true)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Data
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="md:col-span-1">
+              <AccountBalanceCard currentBalance={currentBalance} initialDeposit={initialDeposit} />
+            </div>
+            <div className="md:col-span-2">
+              <TradingCalendar onDateSelect={handleDateSelect} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <KeyMetricsCard metric={metrics.totalPL} />
+            <KeyMetricsCard metric={metrics.winRate} />
+            <KeyMetricsCard metric={metrics.profitFactor} />
+            <KeyMetricsCard metric={metrics.averageWin} />
+            <KeyMetricsCard metric={metrics.averageLoss} />
+            <KeyMetricsCard metric={metrics.maxDrawdown} />
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading trade data...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold mb-4">Detailed Analytics</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <CircularChart data={circularData.profits} />
+                <CircularChart data={circularData.winRate} />
+                <CircularChart data={circularData.rulesFollowed} />
+                <CircularChart data={circularData.profitFactor} />
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <TradingHealthTrend 
+                  data={healthData} 
+                  thresholds={{ outperforming: 2.5, good: 2.0, caution: 1.5 }} 
+                />
+                <PerformanceBars 
+                  title="Performance by Day" 
+                  data={dayPerformance} 
+                  dataKey="name" 
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <PerformanceBars 
+                  title="Performance by Time" 
+                  data={timePerformance} 
+                  dataKey="name" 
+                />
+                <div className="grid grid-cols-1 gap-6">
+                  <TopPerforming title="Top Performing Setups" data={topSetups} />
+                  <TopPerforming title="Top Performing Symbols" data={topSymbols} />
+                </div>
+              </div>
+              
+              <div className="mb-8">
+                <TimeHeldAnalysis categories={timeHeldCategories} />
+              </div>
+            </>
+          )}
+        </div>
+      </SidebarInset>
+      <ExportDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        trades={tradesData}
+        setups={topSetups}
+        metrics={metrics}
+        healthData={healthData}
+        dayPerformance={dayPerformance}
+        timePerformance={timePerformance}
+        topSetups={topSetups}
+        topSymbols={topSymbols}
+        timeHeldCategories={timeHeldCategories}
+      />
     </div>
   );
 };

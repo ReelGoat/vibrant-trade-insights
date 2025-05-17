@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import type { Trade } from '@/components/trades/types/TradeTypes';
+import { SidebarInset } from '@/components/ui/sidebar';
 
 const History = () => {
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -57,7 +58,7 @@ const History = () => {
     }
   };
 
-  const renderProfitLoss = (value: number | null) => {
+  const renderProfitLoss = React.useCallback((value: number | null) => {
     if (value === null) return '-';
     
     const isProfit = value >= 0;
@@ -68,149 +69,153 @@ const History = () => {
         {isProfit ? '+' : '-'}{formattedValue}
       </span>
     );
-  };
+  }, []);
 
-  // Calculate monthly performance data
-  const monthlyPerformance = trades.reduce((acc, trade) => {
-    const date = new Date(trade.entry_date);
-    const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
-    
-    if (!acc[monthYear]) {
-      acc[monthYear] = {
-        profit: 0,
-        tradesCount: 0,
-        winCount: 0
-      };
-    }
-    
-    acc[monthYear].tradesCount += 1;
-    acc[monthYear].profit += trade.profit_loss || 0;
-    
-    if ((trade.profit_loss || 0) > 0) {
-      acc[monthYear].winCount += 1;
-    }
-    
-    return acc;
-  }, {} as Record<string, { profit: number; tradesCount: number; winCount: number }>);
+  // Memoize monthly performance calculation
+  const { monthlyPerformance, sortedMonths } = useMemo(() => {
+    const performance = trades.reduce((acc, trade) => {
+      const date = new Date(trade.entry_date);
+      const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+      
+      if (!acc[monthYear]) {
+        acc[monthYear] = {
+          profit: 0,
+          tradesCount: 0,
+          winCount: 0
+        };
+      }
+      
+      acc[monthYear].tradesCount += 1;
+      acc[monthYear].profit += trade.profit_loss || 0;
+      
+      if ((trade.profit_loss || 0) > 0) {
+        acc[monthYear].winCount += 1;
+      }
+      
+      return acc;
+    }, {} as Record<string, { profit: number; tradesCount: number; winCount: number }>);
 
-  const sortedMonths = Object.keys(monthlyPerformance).sort((a, b) => {
-    // Convert month names to date objects for proper sorting
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    return dateB.getTime() - dateA.getTime();
-  });
+    const months = Object.keys(performance).sort((a, b) => {
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return { monthlyPerformance: performance, sortedMonths: months };
+  }, [trades]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-16">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Trading History</h1>
-        
-        {loading ? (
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground">Loading trade history...</p>
-          </div>
-        ) : trades.length === 0 ? (
-          <Card>
-            <div className="py-16 text-center">
-              <p className="text-muted-foreground">No trade history found. Start logging trades to see your history.</p>
+    <div className="flex min-h-screen bg-background text-foreground">
+      <Navigation />
+      <SidebarInset>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-6">Trading History</h1>
+          
+          {loading ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">Loading trade history...</p>
             </div>
-          </Card>
-        ) : (
-          <>
-            {/* Monthly Summary */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Monthly Performance</h2>
+          ) : trades.length === 0 ? (
+            <Card>
+              <div className="py-16 text-center">
+                <p className="text-muted-foreground">No trade history found. Start logging trades to see your history.</p>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Monthly Summary */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Monthly Performance</h2>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Month</TableHead>
+                        <TableHead>Net P&L</TableHead>
+                        <TableHead>Trades</TableHead>
+                        <TableHead>Win Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedMonths.map((month) => {
+                        const data = monthlyPerformance[month];
+                        const winRate = data.tradesCount > 0 
+                          ? (data.winCount / data.tradesCount) * 100 
+                          : 0;
+                          
+                        return (
+                          <TableRow key={month}>
+                            <TableCell className="font-medium">{month}</TableCell>
+                            <TableCell className={data.profit >= 0 ? 'text-profit' : 'text-loss'}>
+                              {data.profit >= 0 ? '+' : '-'}${Math.abs(data.profit).toFixed(2)}
+                            </TableCell>
+                            <TableCell>{data.tradesCount}</TableCell>
+                            <TableCell>{winRate.toFixed(1)}%</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              
+              {/* Trade History */}
+              <h2 className="text-xl font-semibold mb-4">All Trades</h2>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Net P&L</TableHead>
-                      <TableHead>Trades</TableHead>
-                      <TableHead>Win Rate</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Direction</TableHead>
+                      <TableHead>Setup</TableHead>
+                      <TableHead>Entry/Exit</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>P&L</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedMonths.map((month) => {
-                      const data = monthlyPerformance[month];
-                      const winRate = data.tradesCount > 0 
-                        ? (data.winCount / data.tradesCount) * 100 
-                        : 0;
-                      
-                      return (
-                        <TableRow key={month}>
-                          <TableCell className="font-medium">{month}</TableCell>
-                          <TableCell className={data.profit >= 0 ? 'text-profit' : 'text-loss'}>
-                            {data.profit >= 0 ? '+' : '-'}${Math.abs(data.profit).toFixed(2)}
-                          </TableCell>
-                          <TableCell>{data.tradesCount}</TableCell>
-                          <TableCell>{winRate.toFixed(1)}%</TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {trades.map((trade) => (
+                      <TableRow key={trade.id}>
+                        <TableCell>
+                          <div>{new Date(trade.entry_date).toLocaleDateString()}</div>
+                          {trade.exit_date && (
+                            <div className="text-xs text-muted-foreground">
+                              to {new Date(trade.exit_date).toLocaleDateString()}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{trade.symbol}</TableCell>
+                        <TableCell>
+                          <span className={`flex items-center ${trade.direction === 'long' ? 'text-profit' : 'text-loss'}`}>
+                            {trade.direction === 'long' ? (
+                              <ArrowUp className="mr-1 h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="mr-1 h-4 w-4" />
+                            )}
+                            {trade.direction.charAt(0).toUpperCase() + trade.direction.slice(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {trade.setup && 'name' in trade.setup ? trade.setup.name : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div>${trade.entry_price}</div>
+                          {trade.exit_price && (
+                            <div className="text-xs text-muted-foreground">${trade.exit_price}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>{trade.quantity}</TableCell>
+                        <TableCell>{renderProfitLoss(trade.profit_loss)}</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
-            </div>
-            
-            {/* Trade History */}
-            <h2 className="text-xl font-semibold mb-4">All Trades</h2>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Symbol</TableHead>
-                    <TableHead>Direction</TableHead>
-                    <TableHead>Setup</TableHead>
-                    <TableHead>Entry/Exit</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>P&L</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {trades.map((trade) => (
-                    <TableRow key={trade.id}>
-                      <TableCell>
-                        <div>{new Date(trade.entry_date).toLocaleDateString()}</div>
-                        {trade.exit_date && (
-                          <div className="text-xs text-muted-foreground">
-                            to {new Date(trade.exit_date).toLocaleDateString()}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{trade.symbol}</TableCell>
-                      <TableCell>
-                        <span className={`flex items-center ${trade.direction === 'long' ? 'text-profit' : 'text-loss'}`}>
-                          {trade.direction === 'long' ? (
-                            <ArrowUp className="mr-1 h-4 w-4" />
-                          ) : (
-                            <ArrowDown className="mr-1 h-4 w-4" />
-                          )}
-                          {trade.direction.charAt(0).toUpperCase() + trade.direction.slice(1)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {trade.setup && 'name' in trade.setup ? trade.setup.name : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div>${trade.entry_price}</div>
-                        {trade.exit_price && (
-                          <div className="text-xs text-muted-foreground">${trade.exit_price}</div>
-                        )}
-                      </TableCell>
-                      <TableCell>{trade.quantity}</TableCell>
-                      <TableCell>{renderProfitLoss(trade.profit_loss)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        )}
-      </div>
-      
-      <Navigation />
+            </>
+          )}
+        </div>
+      </SidebarInset>
     </div>
   );
 };
